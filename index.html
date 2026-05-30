@@ -3,124 +3,598 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UVG Liquid Studio</title>
+    <title>UVG Liquid Glass Studio</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Montserrat', 'sans-serif'],
+                    },
+                    colors: {
+                        uvg: { green: '#0B5135', light: '#E8F1EC', accent: '#10B981' }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        :root { --glass-bg: rgba(255, 255, 255, 0.2); }
-        body { background: radial-gradient(circle at 50% 50%, #0B5135, #0a1421); min-height: 100vh; color: white; font-family: 'Inter', sans-serif; }
-        
-        .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
         
-        .glass-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; transition: 0.3s; }
-        .glass-input:focus { background: rgba(255,255,255,0.1); outline: none; border-color: #4ade80; }
+        body {
+            background: linear-gradient(135deg, #0B5135 0%, #061c12 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* Efecto Cristal (Apple Style) */
+        .liquid-glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px) saturate(150%);
+            -webkit-backdrop-filter: blur(24px) saturate(150%);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* Inputs y Textareas */
+        .glass-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .glass-input:focus {
+            background: rgba(0, 0, 0, 0.4);
+            border-color: var(--uvg-accent);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+        .glass-input::placeholder { color: rgba(255, 255, 255, 0.4); }
+
+        /* Scrollbar personalizado */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+        /* Canvas (Artboard) */
+        #artboard {
+            background-color: white;
+            position: relative;
+            overflow: hidden;
+        }
         
-        /* Smooth transitions */
-        .preview-slide { transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        .draggable-element {
+            position: absolute;
+            cursor: grab;
+            user-select: none;
+            padding: 4px;
+            border: 2px dashed transparent;
+            transition: border-color 0.2s;
+        }
+        
+        .draggable-element:hover { border-color: rgba(11, 81, 53, 0.3); }
+        .draggable-element.is-dragging {
+            cursor: grabbing !important;
+            opacity: 0.8;
+            border-color: #0B5135;
+        }
+
+        /* Elementos del Lienzo */
+        .canvas-title { font-family: 'Montserrat', sans-serif; color: #14253F; font-weight: 800; font-size: 2.5rem; line-height: 1.1; }
+        .canvas-tag { background: #E6F4EA; color: #0B5135; padding: 4px 12px; border-radius: 99px; font-weight: 600; font-size: 0.8rem; display: inline-block; }
+        .canvas-text { font-family: 'Inter', sans-serif; color: #4B5563; font-size: 0.9rem; line-height: 1.5; }
+        .canvas-img { border-radius: 12px; object-fit: cover; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+
+        /* Toasts Animados */
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast {
+            background: white; color: #1f2937; padding: 12px 20px; border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px;
+            animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            font-weight: 500; font-size: 0.9rem; border-left: 4px solid #10B981;
+        }
+        .toast.error { border-left-color: #EF4444; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateY(10px); } }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="antialiased selection:bg-uvg-accent selection:text-white">
 
-    <div id="login-section" class="max-w-md mx-auto glass-panel p-10 mt-20">
-        <div class="text-center mb-8">
-            <h2 class="text-3xl font-bold mb-2">Liquid Studio</h2>
-            <p class="text-white/60">Bienvenido a UVG Creative Lab</p>
-        </div>
-        <form id="login-form" class="space-y-4">
-            <input type="text" id="login-email" placeholder="Usuario o Correo" class="w-full px-4 py-3 glass-input text-white">
-            <input type="password" id="login-password" placeholder="Contraseña" class="w-full px-4 py-3 glass-input text-white">
-            <button class="w-full bg-white/20 hover:bg-white/30 py-3 rounded-xl font-semibold transition-all">Iniciar Sesión</button>
-        </form>
-        <div class="my-6 grid grid-cols-4 gap-2">
-            <button onclick="loginProvider('google')" class="p-3 bg-white/10 rounded-xl hover:bg-white/20"><i class="fa-brands fa-google"></i></button>
-            <button onclick="loginProvider('microsoft')" class="p-3 bg-white/10 rounded-xl hover:bg-white/20"><i class="fa-brands fa-microsoft"></i></button>
-            <button onclick="loginProvider('facebook')" class="p-3 bg-white/10 rounded-xl hover:bg-white/20"><i class="fa-brands fa-facebook"></i></button>
-            <button onclick="loginProvider('anonymous')" class="p-3 bg-white/10 rounded-xl hover:bg-white/20"><i class="fa-solid fa-user-secret"></i></button>
+    <!-- Sistema de Notificaciones Flotantes -->
+    <div id="toast-container"></div>
+
+    <div id="login-section" class="min-h-screen flex items-center justify-center p-4">
+        <div class="liquid-glass rounded-3xl p-8 md:p-12 w-full max-w-md relative overflow-hidden">
+            <!-- Brillos decorativos -->
+            <div class="absolute -top-20 -right-20 w-40 h-40 bg-uvg-accent rounded-full mix-blend-screen filter blur-3xl opacity-30"></div>
+            <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-500 rounded-full mix-blend-screen filter blur-3xl opacity-20"></div>
+
+            <div class="text-center mb-8 relative z-10">
+                <h1 class="text-4xl font-display font-bold tracking-tight mb-2">Liquid <span class="text-uvg-accent">Studio</span></h1>
+                <p class="text-white/70 text-sm">Ingresa para editar tus presentaciones</p>
+            </div>
+
+            <form id="login-form" class="space-y-5 relative z-10">
+                <div>
+                    <label class="block text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">Correo UVG o Usuario</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-4 top-3.5 text-white/40"></i>
+                        <input type="text" id="login-email" value="mar251808@uvg.edu.gt" class="glass-input w-full pl-10 pr-4 py-3 rounded-xl text-sm" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">Contraseña</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-4 top-3.5 text-white/40"></i>
+                        <input type="password" id="login-password" placeholder="••••••••" class="glass-input w-full pl-10 pr-4 py-3 rounded-xl text-sm">
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-login-mail" class="w-full bg-uvg-accent hover:bg-emerald-400 text-white font-bold py-3.5 rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> Ingresar al Studio
+                </button>
+            </form>
+
+            <div class="mt-6 flex items-center justify-between relative z-10">
+                <hr class="w-full border-white/10">
+                <span class="px-3 text-xs text-white/40 font-medium">O</span>
+                <hr class="w-full border-white/10">
+            </div>
+
+            <button onclick="loginGoogle()" class="mt-6 w-full glass-input hover:bg-white/10 font-medium py-3 rounded-xl transition-all flex items-center justify-center gap-3 relative z-10">
+                <i class="fa-brands fa-google text-white"></i> Iniciar con Google
+            </button>
         </div>
     </div>
 
-    <div id="dashboard-section" class="hidden max-w-7xl mx-auto">
-        <header class="flex justify-between items-center glass-panel p-6 mb-8">
-            <h1 class="text-2xl font-bold">Liquid <span class="text-green-400">Editor</span></h1>
-            <div class="flex gap-4">
-                <button onclick="window.open('dashboard.html', '_blank')" class="bg-green-600 px-6 py-2 rounded-full hover:bg-green-500 transition-all">Presentar</button>
-                <button onclick="logout()" class="text-red-400">Salir</button>
+    <div id="studio-section" class="hidden h-screen flex flex-col overflow-hidden p-2 md:p-4 gap-4">
+        
+        <!-- Header Principal -->
+        <header class="liquid-glass rounded-2xl px-6 py-4 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-4">
+                <div class="bg-white/10 p-2 rounded-lg">
+                    <i class="fa-solid fa-wand-magic-sparkles text-uvg-accent text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-display font-bold text-xl leading-tight">Liquid Glass Studio</h1>
+                    <p class="text-xs text-white/60">Editando: Modelos de Desarrollo</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="dashboard.html" target="_blank" class="bg-white text-uvg-green px-5 py-2 rounded-xl font-bold text-sm hover:bg-gray-100 transition-colors shadow-lg flex items-center gap-2">
+                    <i class="fa-solid fa-play"></i> Proyectar
+                </a>
+                <button onclick="logOut()" class="bg-red-500/20 text-red-300 hover:bg-red-500/40 px-4 py-2 rounded-xl font-semibold text-sm transition-colors border border-red-500/30">
+                    Salir
+                </button>
             </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Sidebar Editor (Canva Style) -->
-            <div class="glass-panel p-6 space-y-4">
-                <h3 class="font-semibold text-lg mb-4">Editor de Diapositiva</h3>
-                <input type="text" id="slide-title" placeholder="Título" class="w-full p-3 glass-input">
-                <textarea id="slide-concept" placeholder="Concepto Clave" class="w-full p-3 glass-input h-24"></textarea>
-                <input type="text" id="slide-image" placeholder="URL de Imagen (Opcional)" class="w-full p-3 glass-input">
-                <button onclick="saveSlide()" class="w-full bg-green-500 py-3 rounded-xl font-bold">Guardar Cambios</button>
-            </div>
+        <!-- Contenedor Principal (3 Columnas) -->
+        <div class="flex-grow flex flex-col lg:flex-row gap-4 min-h-0">
+            
+            <!-- Panel Izquierdo: Lista de Diapositivas -->
+            <aside class="w-full lg:w-64 liquid-glass rounded-2xl flex flex-col shrink-0 overflow-hidden">
+                <div class="p-4 border-b border-white/10 flex justify-between items-center">
+                    <h3 class="font-semibold text-sm uppercase tracking-wider text-white/70">Diapositivas</h3>
+                    <button onclick="createNewSlide()" class="w-8 h-8 rounded-full bg-uvg-accent hover:bg-emerald-400 flex items-center justify-center transition-colors shadow-lg" title="Nueva Diapositiva">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+                <div id="slide-list" class="flex-grow overflow-y-auto p-2 space-y-2">
+                    <!-- Las diapositivas se cargan aquí -->
+                    <div class="text-center p-4 text-white/40 text-sm italic"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>
+                </div>
+            </aside>
 
-            <!-- Preview (Canva-like Stage) -->
-            <div class="lg:col-span-2 glass-panel p-8 flex flex-col items-center justify-center">
-                <div id="canvas-preview" class="w-full aspect-video bg-white/10 rounded-xl border border-white/20 flex items-center justify-center p-10 text-center">
-                    <div>
-                        <h2 id="prev-title" class="text-4xl font-bold mb-4">Vista Previa</h2>
-                        <p id="prev-concept" class="text-lg opacity-80">Edita desde el panel lateral...</p>
+            <!-- Panel Central: Canva Artboard -->
+            <main class="flex-grow liquid-glass rounded-2xl flex flex-col overflow-hidden relative">
+                <div class="p-3 border-b border-white/10 bg-black/20 flex justify-between items-center shrink-0">
+                    <span class="text-xs text-white/60"><i class="fa-solid fa-arrows-up-down-left-right mr-1"></i> Arrastra los elementos libremente</span>
+                    <button onclick="resetPositions()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1 rounded text-white/80 transition-colors">Centrar todo</button>
+                </div>
+                
+                <!-- Lienzo 16:9 -->
+                <div class="flex-grow flex items-center justify-center p-4 md:p-8 bg-black/40 overflow-hidden">
+                    <div id="artboard" class="w-full max-w-4xl aspect-[16/9] rounded-xl shadow-2xl transition-all">
+                        
+                        <!-- Elementos arrastrables del lienzo -->
+                        <div id="el-title" class="draggable-element top-[10%] left-[5%] max-w-[80%]">
+                            <h2 class="canvas-title">Título de la Diapositiva</h2>
+                        </div>
+                        
+                        <div id="el-concept" class="draggable-element top-[30%] left-[5%] max-w-[45%]">
+                            <span class="canvas-tag mb-2">1. Concepto Clave</span>
+                            <p class="canvas-text">El concepto principal aparecerá aquí...</p>
+                        </div>
+                        
+                        <div id="el-pros" class="draggable-element top-[60%] left-[5%] max-w-[40%] bg-green-50/80 p-3 rounded-lg border border-green-200">
+                            <h4 class="font-bold text-green-800 text-sm mb-1"><i class="fa-solid fa-check-circle"></i> Ventajas</h4>
+                            <p class="canvas-text text-xs">Agrega ventajas en el panel lateral.</p>
+                        </div>
+
+                        <div id="el-cons" class="draggable-element top-[60%] left-[50%] max-w-[40%] bg-red-50/80 p-3 rounded-lg border border-red-200">
+                            <h4 class="font-bold text-red-800 text-sm mb-1"><i class="fa-solid fa-times-circle"></i> Críticas</h4>
+                            <p class="canvas-text text-xs">Agrega críticas en el panel lateral.</p>
+                        </div>
+
+                        <div id="el-example" class="draggable-element bottom-[5%] left-[5%] max-w-[90%] bg-gray-100/90 p-3 rounded-lg border-l-4 border-uvg-green">
+                            <h4 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-map-location-dot text-uvg-green"></i> Ejemplo Práctico</h4>
+                            <p class="canvas-text text-xs">El ejemplo guatemalteco irá aquí...</p>
+                        </div>
+
+                        <div id="el-image" class="draggable-element top-[15%] right-[5%] w-40 h-40">
+                            <img src="https://via.placeholder.com/150?text=Sin+Imagen" class="canvas-img w-full h-full">
+                        </div>
+
                     </div>
                 </div>
-            </div>
+            </main>
+
+            <!-- Panel Derecho: Propiedades / Editor -->
+            <aside class="w-full lg:w-80 liquid-glass rounded-2xl flex flex-col shrink-0 overflow-hidden">
+                <div class="p-4 border-b border-white/10 bg-black/20">
+                    <h3 class="font-semibold text-sm uppercase tracking-wider text-white/70">Editor de Contenido</h3>
+                </div>
+                
+                <div class="flex-grow overflow-y-auto p-4 space-y-4">
+                    <div>
+                        <label class="text-xs text-white/60 font-medium mb-1 block">Título</label>
+                        <input type="text" id="edit-title" class="glass-input w-full p-2.5 rounded-lg text-sm" placeholder="Ej: Desarrollo Sostenible" oninput="updateCanvasLive()">
+                    </div>
+                    <div>
+                        <label class="text-xs text-white/60 font-medium mb-1 block">Concepto Clave</label>
+                        <textarea id="edit-concept" class="glass-input w-full p-2.5 rounded-lg text-sm h-24 resize-none" placeholder="Definición breve..." oninput="updateCanvasLive()"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs text-white/60 font-medium mb-1 block">Ventajas (separadas por coma)</label>
+                        <textarea id="edit-pros" class="glass-input w-full p-2.5 rounded-lg text-sm h-16 resize-none" placeholder="Eficiente, Ecológico..." oninput="updateCanvasLive()"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs text-white/60 font-medium mb-1 block">Críticas (separadas por coma)</label>
+                        <textarea id="edit-cons" class="glass-input w-full p-2.5 rounded-lg text-sm h-16 resize-none" placeholder="Costoso, Lento..." oninput="updateCanvasLive()"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs text-white/60 font-medium mb-1 block">Ejemplo Local</label>
+                        <textarea id="edit-example" class="glass-input w-full p-2.5 rounded-lg text-sm h-20 resize-none" placeholder="En Guatemala..." oninput="updateCanvasLive()"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs text-white/60 font-medium mb-1 block">URL de Imagen</label>
+                        <input type="text" id="edit-image" class="glass-input w-full p-2.5 rounded-lg text-sm" placeholder="https://..." oninput="updateCanvasLive()">
+                    </div>
+                </div>
+
+                <div class="p-4 border-t border-white/10 bg-black/20 grid grid-cols-2 gap-2 shrink-0">
+                    <button onclick="saveCurrentSlide()" class="col-span-2 bg-uvg-accent hover:bg-emerald-400 text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Guardar Cambios
+                    </button>
+                    <button onclick="deleteCurrentSlide()" class="col-span-2 mt-2 bg-red-500/20 hover:bg-red-500/40 text-red-200 font-bold py-2 rounded-xl transition-all border border-red-500/30 text-sm">
+                        <i class="fa-solid fa-trash"></i> Eliminar Ficha
+                    </button>
+                </div>
+            </aside>
+
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, OAuthProvider, FacebookAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyACfn6C6_XqLDQI29f6uHUUwlCQkSCXNYk", authDomain: "costos-comunicacion-digital.firebaseapp.com", projectId: "costos-comunicacion-digital", storageBucket: "costos-comunicacion-digital.firebasestorage.app", messagingSenderId: "299496606379", appId: "1:299496606379:web:a4d6609ff79eebff0c85ee" };
+        // Configuración Firebase UVG
+        const firebaseConfig = {
+            apiKey: "AIzaSyACfn6C6_XqLDQI29f6uHUUwlCQkSCXNYk",
+            authDomain: "costos-comunicacion-digital.firebaseapp.com",
+            databaseURL: "https://costos-comunicacion-digital-default-rtdb.firebaseio.com",
+            projectId: "costos-comunicacion-digital",
+            storageBucket: "costos-comunicacion-digital.firebasestorage.app",
+            messagingSenderId: "299496606379",
+            appId: "1:299496606379:web:a4d6609ff79eebff0c85ee",
+            measurementId: "G-D7GGDWSWKY"
+        };
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const slideCollection = collection(db, 'artifacts/costos-comunicacion/public/data/slides');
 
-        // UI Listeners
-        window.loginProvider = async (p) => {
-            let provider;
-            if(p === 'google') provider = new GoogleAuthProvider();
-            if(p === 'microsoft') provider = new OAuthProvider('microsoft.com');
-            if(p === 'facebook') provider = new FacebookAuthProvider();
+        // Estado de la Aplicación
+        let slidesData = [];
+        let activeSlideId = null;
+        let positionsCache = {}; // Guarda la posición de los elementos por slide
+
+        // Sistema de Notificaciones (Toasts)
+        window.showToast = (message, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'error' ? 'error' : ''}`;
             
-            try { await signInWithPopup(auth, provider); } catch(e) { alert("Error: " + e.message); }
+            const icon = type === 'error' ? '<i class="fa-solid fa-circle-exclamation text-red-500 text-lg"></i>' : '<i class="fa-solid fa-circle-check text-green-500 text-lg"></i>';
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         };
 
+        // --- AUTENTICACIÓN ---
         onAuthStateChanged(auth, (user) => {
-            if(user) {
+            if (user) {
                 document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('dashboard-section').classList.remove('hidden');
+                document.getElementById('studio-section').classList.remove('hidden');
+                loadSlidesFromFirebase();
+                showToast(`Bienvenido, ${user.email}`);
             } else {
                 document.getElementById('login-section').classList.remove('hidden');
-                document.getElementById('dashboard-section').classList.add('hidden');
+                document.getElementById('studio-section').classList.add('hidden');
             }
         });
 
-        window.saveSlide = async () => {
-            const title = document.getElementById('slide-title').value;
-            const concept = document.getElementById('slide-concept').value;
-            await addDoc(collection(db, 'artifacts/costos-comunicacion/public/data/slides'), {
-                title, concept, createdAt: Date.now()
-            });
-            alert("¡Guardado en el Cloud!");
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-login-mail');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            
+            let email = document.getElementById('login-email').value.trim();
+            if(!email.includes('@')) email += '@uvg.edu.gt';
+            const password = document.getElementById('login-password').value;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                showToast("Datos incorrectos. Verifica tu usuario.", "error");
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Ingresar al Studio';
+            }
+        });
+
+        window.loginGoogle = async () => {
+            try {
+                await signInWithPopup(auth, new GoogleAuthProvider());
+            } catch (error) {
+                showToast(error.message, "error");
+            }
         };
-        
-        // Live preview sync
-        document.getElementById('slide-title').oninput = (e) => document.getElementById('prev-title').innerText = e.target.value;
-        document.getElementById('slide-concept').oninput = (e) => document.getElementById('prev-concept').innerText = e.target.value;
+
+        window.logOut = async () => {
+            await signOut(auth);
+            window.location.reload();
+        };
+
+        // --- GESTIÓN DE DATOS (CRUD) ---
+        function loadSlidesFromFirebase() {
+            onSnapshot(slideCollection, (snapshot) => {
+                slidesData = [];
+                snapshot.forEach(doc => slidesData.push({ id: doc.id, ...doc.data() }));
+                slidesData.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                renderSidebarList();
+                
+                // Cargar la primera diapositiva si no hay ninguna activa
+                if (slidesData.length > 0 && !activeSlideId) {
+                    selectSlide(slidesData[0].id);
+                } else if (slidesData.length === 0) {
+                    clearEditor();
+                }
+            });
+        }
+
+        function renderSidebarList() {
+            const list = document.getElementById('slide-list');
+            list.innerHTML = '';
+            
+            if(slidesData.length === 0) {
+                list.innerHTML = '<div class="text-center p-4 text-white/40 text-sm italic">No hay fichas creadas.</div>';
+                return;
+            }
+
+            slidesData.forEach((slide, index) => {
+                const isActive = slide.id === activeSlideId;
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl cursor-pointer transition-all border ${isActive ? 'bg-uvg-accent/20 border-uvg-accent' : 'bg-white/5 border-transparent hover:bg-white/10'}`;
+                div.onclick = () => selectSlide(slide.id);
+                div.innerHTML = `
+                    <div class="text-xs text-uvg-accent font-bold mb-1">Ficha ${index + 1}</div>
+                    <div class="text-sm font-medium truncate">${slide.title || 'Diapositiva sin título'}</div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        window.createNewSlide = async () => {
+            const newSlide = {
+                title: 'Nueva Ficha', concept: '', pros: '', cons: '', example: '', imageUrl: '', positions: {}, createdAt: Date.now()
+            };
+            try {
+                const docRef = await addDoc(slideCollection, newSlide);
+                activeSlideId = docRef.id;
+                showToast("Diapositiva creada");
+            } catch(e) { showToast("Error al crear", "error"); }
+        };
+
+        window.selectSlide = (id) => {
+            activeSlideId = id;
+            renderSidebarList();
+            
+            const slide = slidesData.find(s => s.id === id);
+            if(slide) {
+                // Llenar formulario
+                document.getElementById('edit-title').value = slide.title || '';
+                document.getElementById('edit-concept').value = slide.concept || '';
+                document.getElementById('edit-pros').value = slide.pros || '';
+                document.getElementById('edit-cons').value = slide.cons || '';
+                document.getElementById('edit-example').value = slide.example || '';
+                document.getElementById('edit-image').value = slide.imageUrl || '';
+                
+                // Cargar posiciones
+                positionsCache = slide.positions || {};
+                applyPositions();
+                
+                updateCanvasLive();
+            }
+        };
+
+        window.saveCurrentSlide = async () => {
+            if(!activeSlideId) return;
+            try {
+                await updateDoc(doc(db, 'artifacts/costos-comunicacion/public/data/slides', activeSlideId), {
+                    title: document.getElementById('edit-title').value,
+                    concept: document.getElementById('edit-concept').value,
+                    pros: document.getElementById('edit-pros').value,
+                    cons: document.getElementById('edit-cons').value,
+                    example: document.getElementById('edit-example').value,
+                    imageUrl: document.getElementById('edit-image').value,
+                    positions: positionsCache // Guardar coordenadas
+                });
+                showToast("Cambios guardados en la nube");
+            } catch(e) { showToast("Error al guardar", "error"); }
+        };
+
+        window.deleteCurrentSlide = async () => {
+            if(!activeSlideId) return;
+            // Usamos un custom confirm con el Toast en la vida real, aquí usamos un truco simple visual
+            if(window.confirm("¿Seguro que deseas eliminar esta ficha para siempre?")) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts/costos-comunicacion/public/data/slides', activeSlideId));
+                    activeSlideId = null;
+                    showToast("Diapositiva eliminada");
+                } catch(e) { showToast("Error al eliminar", "error"); }
+            }
+        };
+
+        function clearEditor() {
+            ['title','concept','pros','cons','example','image'].forEach(id => document.getElementById(`edit-${id}`).value = '');
+            updateCanvasLive();
+        }
+
+        // --- EDITOR CANVA-LIKE (Actualización Visual) ---
+        window.updateCanvasLive = () => {
+            const title = document.getElementById('edit-title').value || 'Título de la Diapositiva';
+            const concept = document.getElementById('edit-concept').value || 'El concepto principal aparecerá aquí...';
+            const pros = document.getElementById('edit-pros').value;
+            const cons = document.getElementById('edit-cons').value;
+            const example = document.getElementById('edit-example').value || 'El ejemplo guatemalteco irá aquí...';
+            const imgUrl = document.getElementById('edit-image').value;
+
+            document.querySelector('#el-title h2').innerText = title;
+            document.querySelector('#el-concept p').innerText = concept;
+            document.querySelector('#el-example p').innerText = example;
+
+            // Formatear Listas (Pros/Cons)
+            const formatList = (str, emptyMsg) => str ? `<ul class="list-disc pl-4 mt-1 space-y-1">` + str.split(',').map(s=>`<li>${s.trim()}</li>`).join('') + `</ul>` : `<p class="canvas-text text-xs">${emptyMsg}</p>`;
+            
+            document.querySelector('#el-pros p').outerHTML = formatList(pros, 'Agrega ventajas...');
+            document.querySelector('#el-cons p').outerHTML = formatList(cons, 'Agrega críticas...');
+
+            // Imagen
+            const imgEl = document.querySelector('#el-image img');
+            if(imgUrl) { imgEl.src = imgUrl; imgEl.style.display = 'block'; }
+            else { imgEl.style.display = 'none'; }
+        };
+
+        // --- SISTEMA DRAG AND DROP (POINTER EVENTS) ---
+        const artboard = document.getElementById('artboard');
+        let draggedElement = null;
+        let startX, startY, initialLeft, initialTop;
+
+        document.querySelectorAll('.draggable-element').forEach(el => {
+            el.addEventListener('pointerdown', dragStart);
+        });
+
+        function dragStart(e) {
+            if(e.button !== 0) return; // Solo clic izquierdo
+            draggedElement = e.currentTarget;
+            draggedElement.classList.add('is-dragging');
+            
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            // Obtener posiciones actuales en px
+            const rect = draggedElement.getBoundingClientRect();
+            const parentRect = artboard.getBoundingClientRect();
+            initialLeft = rect.left - parentRect.left;
+            initialTop = rect.top - parentRect.top;
+
+            document.addEventListener('pointermove', dragMove);
+            document.addEventListener('pointerup', dragEnd);
+        }
+
+        function dragMove(e) {
+            if(!draggedElement) return;
+            e.preventDefault();
+
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            
+            const parentRect = artboard.getBoundingClientRect();
+            const elRect = draggedElement.getBoundingClientRect();
+
+            // Calcular nueva posición en píxeles y limitar a los bordes del canvas
+            let newLeft = initialLeft + dx;
+            let newTop = initialTop + dy;
+
+            // Límites (Constrain to parent)
+            if (newLeft < 0) newLeft = 0;
+            if (newTop < 0) newTop = 0;
+            if (newLeft + elRect.width > parentRect.width) newLeft = parentRect.width - elRect.width;
+            if (newTop + elRect.height > parentRect.height) newTop = parentRect.height - elRect.height;
+
+            // Convertir a porcentajes para que sea responsivo
+            const leftPercent = (newLeft / parentRect.width) * 100;
+            const topPercent = (newTop / parentRect.height) * 100;
+
+            draggedElement.style.left = `${leftPercent}%`;
+            draggedElement.style.top = `${topPercent}%`;
+        }
+
+        function dragEnd(e) {
+            if(!draggedElement) return;
+            
+            // Guardar en caché temporal
+            positionsCache[draggedElement.id] = {
+                left: draggedElement.style.left,
+                top: draggedElement.style.top
+            };
+
+            draggedElement.classList.remove('is-dragging');
+            draggedElement = null;
+            document.removeEventListener('pointermove', dragMove);
+            document.removeEventListener('pointerup', dragEnd);
+        }
+
+        function applyPositions() {
+            document.querySelectorAll('.draggable-element').forEach(el => {
+                if(positionsCache[el.id]) {
+                    el.style.left = positionsCache[el.id].left;
+                    el.style.top = positionsCache[el.id].top;
+                } else {
+                    // Posiciones por defecto si no hay guardadas
+                    el.style.left = ''; el.style.top = '';
+                }
+            });
+        }
+
+        window.resetPositions = () => {
+            positionsCache = {};
+            document.querySelectorAll('.draggable-element').forEach(el => { el.style.left = ''; el.style.top = ''; });
+            showToast("Posiciones centradas");
+        };
+
     </script>
 </body>
 </html>
