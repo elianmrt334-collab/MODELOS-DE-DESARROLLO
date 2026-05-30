@@ -154,7 +154,7 @@
             
             <form id="login-form" class="w-full space-y-4">
                 <div>
-                    <input type="text" id="login-email" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-uvg-green outline-none" placeholder="Usuario o Correo" value="emartinez">
+                    <input type="text" id="login-email" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-uvg-green outline-none" placeholder="Usuario o Correo" value="mar251808@uvg.edu.gt">
                 </div>
                 <div>
                     <input type="password" id="login-password" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-uvg-green outline-none" placeholder="Contraseña" value="UVG2026">
@@ -169,6 +169,29 @@
                 <button type="button" id="btn-reset-pwd" class="text-sm text-uvg-green font-semibold hover:underline transition-all">
                     ¿Olvidaste tu contraseña?
                 </button>
+            </div>
+
+            <div class="w-full mt-6">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-3 bg-white text-gray-500 font-medium">O iniciar sesión con</span>
+                    </div>
+                </div>
+
+                <div class="mt-5 grid grid-cols-3 gap-3">
+                    <button type="button" onclick="loginWithGoogle()" class="w-full flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all" title="Ingresar con Google">
+                        <i class="fa-brands fa-google text-red-500 text-lg"></i>
+                    </button>
+                    <button type="button" onclick="loginWithMicrosoft()" class="w-full flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all" title="Ingresar con Microsoft">
+                <div class="mt-5 grid grid-cols-1 gap-3">
+                    <button type="button" onclick="loginWithGoogle()" class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all gap-2" title="Ingresar con Google">
+                        <i class="fa-brands fa-google text-red-500 text-lg"></i>
+                        <span>Ingresar con Google</span>
+                    </button>
+                </div>
             </div>
 
             <p id="login-status" class="text-sm font-medium mt-4 h-5"></p>
@@ -331,7 +354,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, GoogleAuthProvider, OAuthProvider, FacebookAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Configuración y variables globales
@@ -436,6 +459,42 @@
                 loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión Segura';
             }
         });
+
+        // Configuración de Proveedores
+        const googleProvider = new GoogleAuthProvider();
+        const microsoftProvider = new OAuthProvider('microsoft.com');
+        const facebookProvider = new FacebookAuthProvider();
+
+        const handlePopupLogin = async (provider, providerName) => {
+            loginBtn.disabled = true;
+            loginStatus.innerText = `Conectando con ${providerName}...`;
+            loginStatus.className = 'text-sm font-medium mt-4 h-5 text-gray-500';
+            
+            try {
+                await signInWithPopup(auth, provider);
+                // El onAuthStateChanged detectará automáticamente el éxito
+            } catch (error) {
+                console.error(`${providerName} Auth error:`, error);
+                loginStatus.className = 'text-sm font-medium mt-4 h-5 text-red-500';
+                
+                if (error.code === 'auth/popup-closed-by-user') {
+                    loginStatus.innerText = 'Se canceló el inicio de sesión.';
+                } else if (error.code === 'auth/account-exists-with-different-credential') {
+                    loginStatus.innerText = 'El correo ya está registrado de otra forma.';
+                    window.showAlert("Conflicto de Cuenta", "Este correo ya está asociado a otra cuenta (probablemente usaste otro método antes). Intenta iniciar sesión con la opción original.", true);
+                } else {
+                    loginStatus.innerText = `Falta configurar ${providerName}.`;
+                    window.showAlert("Falta Configuración", `Asegúrate de ir a la consola de Firebase (Authentication > Sign-in method) y habilitar el proveedor de ${providerName}.`, true);
+                }
+                
+                loginBtn.disabled = false;
+            }
+        };
+
+        // Funciones globales para los botones HTML
+        window.loginWithGoogle = () => handlePopupLogin(googleProvider, 'Google');
+        window.loginWithMicrosoft = () => handlePopupLogin(microsoftProvider, 'Microsoft');
+        window.loginWithFacebook = () => handlePopupLogin(facebookProvider, 'Facebook');
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
