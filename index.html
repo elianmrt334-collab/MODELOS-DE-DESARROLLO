@@ -150,12 +150,20 @@
                 <div class="logo-uvg-texto">UNIVERSIDAD<br>DEL VALLE<br>DE GUATEMALA</div>
             </div>
             <h1 class="text-2xl font-bold text-uvg-dark mb-2 font-title">Portal de Edición</h1>
-            <p class="text-gray-600 mb-8 text-sm">Autenticación requerida para acceder al CMS de tus diapositivas.</p>
+            <p class="text-gray-600 mb-6 text-sm">Ingresa tus credenciales para acceder al CMS.</p>
             
-            <button id="btn-login" class="bg-uvg-green text-white px-8 py-3 rounded-xl font-bold w-full hover:bg-green-800 transition-colors shadow-lg flex items-center justify-center gap-2">
-                <i class="fa-solid fa-lock"></i> Iniciar Sesión Segura
-            </button>
-            <p id="login-status" class="text-sm text-gray-500 mt-4 h-5"></p>
+            <form id="login-form" class="w-full space-y-4">
+                <div>
+                    <input type="text" id="login-email" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-uvg-green outline-none" placeholder="Usuario o Correo" value="emartinez">
+                </div>
+                <div>
+                    <input type="password" id="login-password" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-uvg-green outline-none" placeholder="Contraseña" value="UVG2026">
+                </div>
+                <button type="submit" id="btn-login" class="bg-uvg-green text-white px-8 py-3 rounded-xl font-bold w-full hover:bg-green-800 transition-colors shadow-lg flex items-center justify-center gap-2 mt-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión Segura
+                </button>
+            </form>
+            <p id="login-status" class="text-sm font-medium mt-4 h-5"></p>
         </div>
     </div>
 
@@ -315,7 +323,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Configuración y variables globales
@@ -363,26 +371,35 @@
         // ==========================================
         // AUTHENTICATION
         // ==========================================
+        const loginForm = document.getElementById('login-form');
         const loginBtn = document.getElementById('btn-login');
         const loginStatus = document.getElementById('login-status');
 
-        loginBtn.addEventListener('click', async () => {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
             loginBtn.disabled = true;
             loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...';
-            loginStatus.innerText = 'Autenticando en servidor seguro...';
+            loginStatus.innerText = 'Autenticando en servidor...';
+            loginStatus.className = 'text-sm font-medium mt-4 h-5 text-gray-500';
+
+            const emailInput = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            // Firebase requiere formato de email. Si solo es el usuario, completamos el formato.
+            const finalEmail = emailInput.includes('@') ? emailInput : `${emailInput}@uvg.edu.gt`;
 
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInWithEmailAndPassword(auth, finalEmail, password);
             } catch (error) {
                 console.error("Auth error:", error);
-                window.showAlert("Error de Acceso", "No se pudo conectar a la base de datos.");
+                loginStatus.className = 'text-sm font-medium mt-4 h-5 text-red-500';
+                if (error.code === 'auth/invalid-credential') {
+                    loginStatus.innerText = 'Usuario o contraseña incorrectos.';
+                } else {
+                    loginStatus.innerText = 'Asegúrate de haber activado el método Correo/Contraseña en Firebase.';
+                }
                 loginBtn.disabled = false;
-                loginBtn.innerHTML = '<i class="fa-solid fa-lock"></i> Intentar de nuevo';
-                loginStatus.innerText = '';
+                loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión Segura';
             }
         });
 
@@ -394,18 +411,19 @@
             } else {
                 currentUser = null;
                 switchView('view-login');
-                loginBtn.disabled = false;
-                loginBtn.innerHTML = '<i class="fa-solid fa-lock"></i> Iniciar Sesión Segura';
-                loginStatus.innerText = '';
+                if(loginBtn) {
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión Segura';
+                }
             }
         });
 
         // ==========================================
         // FIRESTORE & EDITOR LOGIC
         // ==========================================
-        // RULE 1: STRICT PATH
+        // RULE 1: STRICT PATH (Usaremos carpeta compartida para que el dashboard pueda leerlas sin problema)
         const getSlidesCollection = () => {
-            return collection(db, 'artifacts', appId, 'users', currentUser.uid, 'slides');
+            return collection(db, 'artifacts', appId, 'public', 'data', 'slides');
         };
 
         let unsubscribe = null;
@@ -430,7 +448,7 @@
                 buildPresentation(); // Update presentation in background
             }, (error) => {
                 console.error("Firestore Listener Error:", error);
-                window.showAlert("Error de Datos", "Se perdió la conexión con el servidor.");
+                window.showAlert("Falta de Permisos", "Ve a tu consola de Firebase y activa Cloud Firestore en 'Modo de Prueba' para permitir guardar diapositivas.", true);
             });
         }
 
@@ -521,13 +539,13 @@
             };
 
             try {
-                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'slides', id);
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'slides', id);
                 await setDoc(docRef, data, { merge: true });
                 window.showAlert("¡Éxito!", "Diapositiva guardada correctamente.");
                 hideForm();
             } catch (error) {
                 console.error("Save error:", error);
-                window.showAlert("Error", "No se pudo guardar.", true);
+                window.showAlert("Error", "Revisa los permisos de Firebase.", true);
             }
         });
 
@@ -550,7 +568,7 @@
             
             const handleConfirm = async () => {
                 try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'slides', id));
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'slides', id));
                     hideForm();
                 } catch (e) {
                     console.error(e);
@@ -579,7 +597,7 @@
             
             try {
                 for (let s of template) {
-                    await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'slides', s.id), s);
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'slides', s.id), s);
                 }
             } catch(e) { console.error(e); }
         };
