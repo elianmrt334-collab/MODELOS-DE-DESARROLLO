@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Presentación UVG</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        uvg: {
+                            green: '#0B5135',
+                            light: '#F0FDF4',
+                            tag: '#DDF4E4',
+                            dark: '#14253F',
+                            gray: '#6B7280'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        title: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #f3f4f6;
+            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Estilos del Logo UVG Recreado */
+        .logo-uvg-presentacion {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .logo-uvg-letras {
+            font-family: 'Arial', sans-serif;
+            font-size: 4rem;
+            font-weight: 900;
+            color: #0B5135;
+            line-height: 0.85;
+            letter-spacing: -2px;
+        }
+        .logo-uvg-linea {
+            width: 100%;
+            height: 2px;
+            background-color: #0B5135;
+            margin: 8px 0;
+        }
+        .logo-uvg-texto {
+            font-family: 'Montserrat', sans-serif;
+            color: #0B5135;
+            font-size: 0.85rem;
+            text-align: center;
+            line-height: 1.2;
+            letter-spacing: 0.5px;
+            font-weight: 400;
+        }
+
+        /* Animaciones del Slider */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            pointer-events: none;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+            z-index: 10;
+        }
+        .slide.prev { transform: translateX(-30px); }
+        .slide.next { transform: translateX(30px); }
+
+        /* Etiquetas */
+        .pill-tag {
+            display: inline-block;
+            background-color: #E6F4EA;
+            color: #0B5135;
+            font-weight: 600;
+            padding: 0.35rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        /* Ocultar barra de desplazamiento en slides */
+        .slide::-webkit-scrollbar { width: 8px; }
+        .slide::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .slide::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        .slide::-webkit-scrollbar-thumb:hover { background: #0B5135; }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden text-gray-800 bg-gray-100">
+
+    <!-- Botón para regresar al Index (Editor) -->
+    <a href="index.html" class="absolute top-6 left-6 z-50 bg-white/90 backdrop-blur text-uvg-dark px-5 py-2.5 rounded-full shadow-lg border border-gray-200 font-medium text-sm hover:bg-uvg-light hover:text-uvg-green transition-colors flex items-center gap-2">
+        <i class="fa-solid fa-pen-to-square"></i> Editar en el Index
+    </a>
+
+    <!-- Estado de Carga -->
+    <div id="loading-screen" class="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center transition-opacity duration-500">
+        <i class="fa-solid fa-circle-notch fa-spin text-5xl text-uvg-green mb-4"></i>
+        <p class="text-uvg-dark font-title font-medium">Sincronizando con la base de datos...</p>
+    </div>
+
+    <!-- Controles de Navegación -->
+    <nav class="fixed bottom-6 left-0 right-0 z-50 flex justify-center items-center pointer-events-none">
+        <div class="bg-white/90 backdrop-blur-md shadow-xl border border-gray-100 rounded-full px-6 py-3 flex items-center gap-6 pointer-events-auto">
+            <button onclick="prevSlide()" class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 text-uvg-green transition-colors text-lg" title="Anterior">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="flex gap-3" id="presentation-dots"></div>
+            <button onclick="nextSlide()" class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 text-uvg-green transition-colors text-lg" title="Siguiente">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+    </nav>
+
+    <main class="h-full w-full flex items-center justify-center p-4 sm:p-8">
+        <div id="slider-container" class="relative w-full max-w-6xl aspect-[16/9] bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-gray-200">
+            
+            <!-- PORTADA (Siempre Fija al inicio) -->
+            <div class="slide active p-12 lg:p-20 flex flex-col items-center justify-center text-center bg-white" id="slide-portada">
+                <div class="logo-uvg-presentacion mb-12 transform scale-125">
+                    <div class="logo-uvg-letras">UVG</div>
+                    <div class="logo-uvg-linea"></div>
+                    <div class="logo-uvg-texto">UNIVERSIDAD<br>DEL VALLE<br>DE GUATEMALA</div>
+                </div>
+                <h1 class="text-5xl lg:text-6xl font-bold text-uvg-green font-title mb-6 leading-tight">
+                    Modelos de<br>Desarrollo Económico
+                </h1>
+                <p class="text-xl text-gray-600 mb-12 max-w-2xl font-sans">
+                    Análisis de aspectos teóricos, ventajas, críticas y casos prácticos.
+                </p>
+                <div class="bg-gray-50 border border-gray-200 text-uvg-green font-bold px-10 py-4 rounded-xl shadow-sm text-lg">
+                    Elián Antonio
+                </div>
+            </div>
+
+            <!-- Diapositivas dinámicas desde Firebase irán aquí -->
+            <div id="dynamic-slides"></div>
+
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Configuración de Firebase de Elián
+        const firebaseConfig = {
+            apiKey: "AIzaSyACfn6C6_XqLDQI29f6uHUUwlCQkSCXNYk",
+            authDomain: "costos-comunicacion-digital.firebaseapp.com",
+            databaseURL: "https://costos-comunicacion-digital-default-rtdb.firebaseio.com",
+            projectId: "costos-comunicacion-digital",
+            storageBucket: "costos-comunicacion-digital.firebasestorage.app",
+            messagingSenderId: "299496606379",
+            appId: "1:299496606379:web:a4d6609ff79eebff0c85ee",
+            measurementId: "G-D7GGDWSWKY"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const appId = 'costos-comunicacion';
+        
+        let slidesData = [];
+        let currentSlideIndex = 0;
+        let currentUser = null;
+
+        // Autenticación automática (mantiene la sesión si venimos del index)
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                fetchSlides();
+            } else {
+                // Si alguien entra directo al dashboard sin pasar por index
+                try {
+                    await signInAnonymously(auth);
+                } catch (error) {
+                    console.error("Error de autenticación:", error);
+                    alert("No se pudo conectar a la base de datos.");
+                }
+            }
+        });
+
+        function fetchSlides() {
+            if (!currentUser) return;
+            
+            const slidesRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'slides');
+            
+            onSnapshot(slidesRef, (snapshot) => {
+                slidesData = [];
+                snapshot.forEach(doc => {
+                    slidesData.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Ordenar por fecha de creación
+                slidesData.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                
+                renderPresentation();
+                
+                // Ocultar pantalla de carga
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.opacity = '0';
+                    setTimeout(() => document.getElementById('loading-screen').style.display = 'none', 500);
+                }, 800);
+
+            }, (error) => {
+                console.error("Error obteniendo diapositivas:", error);
+            });
+        }
+
+        function renderPresentation() {
+            const container = document.getElementById('dynamic-slides');
+            const dotsContainer = document.getElementById('presentation-dots');
+            
+            container.innerHTML = '';
+            dotsContainer.innerHTML = '';
+
+            const totalSlides = slidesData.length + 1; // +1 por la portada estática
+
+            // Construir Indicadores (Puntos)
+            for (let i = 0; i < totalSlides; i++) {
+                const dot = document.createElement('button');
+                dot.className = `w-3 h-3 rounded-full transition-all duration-300 ${i === currentSlideIndex ? 'bg-uvg-green w-8' : 'bg-gray-300 hover:bg-gray-400'}`;
+                dot.onclick = () => goToSlide(i);
+                dotsContainer.appendChild(dot);
+            }
+
+            // Helper para formatear listas (separadas por comas)
+            const makeList = (str, iconClass, colorClass) => {
+                if (!str) return '<p class="text-sm text-gray-500 italic">No hay datos</p>';
+                const items = str.split(',').map(s => s.trim()).filter(s => s);
+                return `<ul class="space-y-3 mt-3">` + items.map(i => `<li class="flex items-start gap-3 text-base text-gray-700"><i class="${iconClass} ${colorClass} mt-1"></i> <span>${i}</span></li>`).join('') + `</ul>`;
+            };
+
+            // Construir Diapositivas Dinámicas
+            slidesData.forEach((slide, index) => {
+                const domIndex = index + 1; 
+                const div = document.createElement('div');
+                div.className = `slide p-10 lg:p-16 overflow-y-auto ${domIndex === currentSlideIndex ? 'active' : (domIndex < currentSlideIndex ? 'prev' : 'next')}`;
+                
+                const prosList = makeList(slide.pros, 'fa-solid fa-circle-check', 'text-green-500');
+                const consList = makeList(slide.cons, 'fa-solid fa-circle-xmark', 'text-red-500');
+                
+                // Header (Título + Imagen opcional)
+                let headerHTML = `
+                    <div class="mb-8 border-b border-gray-100 pb-6 flex items-center justify-between gap-6">
+                        <h2 class="text-4xl lg:text-5xl font-bold text-uvg-dark font-title">${slide.title || 'Sin Título'}</h2>
+                        ${slide.imageUrl ? `<img src="${slide.imageUrl}" onerror="this.style.display='none'" class="h-28 w-48 object-cover rounded-xl shadow-md border border-gray-200">` : ''}
+                    </div>
+                `;
+
+                div.innerHTML = `
+                    ${headerHTML}
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 h-full pb-10">
+                        
+                        <!-- Columna Izquierda -->
+                        <div class="flex flex-col gap-6">
+                            <div>
+                                <span class="pill-tag"><i class="fa-solid fa-book-open mr-2"></i> 1. Concepto Clave</span>
+                                <p class="text-gray-800 text-lg leading-relaxed">${slide.concept || 'Sin definición.'}</p>
+                            </div>
+                            
+                            ${slide.context ? `
+                            <div>
+                                <span class="pill-tag bg-gray-100 text-gray-700"><i class="fa-solid fa-clock-rotate-left mr-2"></i> 2. Contexto Histórico</span>
+                                <p class="text-gray-600 text-base leading-relaxed">${slide.context}</p>
+                            </div>` : ''}
+
+                            ${slide.authors ? `
+                            <div class="mt-auto bg-gray-50 border-l-4 border-uvg-green p-5 rounded-r-xl">
+                                <h4 class="font-bold text-uvg-green mb-2 flex items-center gap-2"><i class="fa-solid fa-users"></i> 5. Principales Exponentes</h4>
+                                <p class="text-base text-gray-700">${slide.authors}</p>
+                            </div>` : ''}
+                        </div>
+
+                        <!-- Columna Derecha -->
+                        <div class="flex flex-col gap-6">
+                            <div class="flex flex-col xl:flex-row gap-6">
+                                <div class="flex-1 bg-green-50/60 p-5 rounded-2xl border border-green-100">
+                                    <h4 class="font-bold text-green-800 text-lg border-b border-green-200 pb-2">3. Ventajas</h4>
+                                    ${prosList}
+                                </div>
+                                <div class="flex-1 bg-red-50/60 p-5 rounded-2xl border border-red-100">
+                                    <h4 class="font-bold text-red-800 text-lg border-b border-red-200 pb-2">4. Críticas</h4>
+                                    ${consList}
+                                </div>
+                            </div>
+
+                            <div class="bg-uvg-dark text-white p-8 rounded-2xl mt-auto shadow-lg border-b-4 border-uvg-green">
+                                <h4 class="font-bold text-green-400 mb-3 text-xl flex items-center gap-2"><i class="fa-solid fa-map-location-dot"></i> 6. Caso Práctico</h4>
+                                <p class="text-gray-200 text-base leading-relaxed">${slide.example || 'Sin ejemplo agregado.'}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            
+            updateUI();
+        }
+
+        function updateUI() {
+            const allSlides = [document.getElementById('slide-portada'), ...document.getElementById('dynamic-slides').children];
+            
+            allSlides.forEach((slide, index) => {
+                if(!slide) return;
+                slide.className = slide.className.replace(/active|prev|next/g, '').trim();
+                if (index === currentSlideIndex) {
+                    slide.classList.add('active');
+                } else if (index < currentSlideIndex) {
+                    slide.classList.add('prev');
+                } else {
+                    slide.classList.add('next');
+                }
+            });
+
+            const dots = document.getElementById('presentation-dots').children;
+            Array.from(dots).forEach((dot, index) => {
+                dot.className = index === currentSlideIndex 
+                    ? 'w-8 h-3 rounded-full transition-all duration-300 bg-uvg-green shadow-sm' 
+                    : 'w-3 h-3 rounded-full transition-all duration-300 bg-gray-300 hover:bg-gray-400';
+            });
+        }
+
+        window.nextSlide = () => {
+            const total = slidesData.length + 1;
+            if (currentSlideIndex < total - 1) {
+                currentSlideIndex++;
+                updateUI();
+            }
+        };
+
+        window.prevSlide = () => {
+            if (currentSlideIndex > 0) {
+                currentSlideIndex--;
+                updateUI();
+            }
+        };
+
+        window.goToSlide = (index) => {
+            currentSlideIndex = index;
+            updateUI();
+        };
+
+        // Navegación con teclado
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space') {
+                window.nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                window.prevSlide();
+            }
+        });
+
+    </script>
+</body>
+</html>
