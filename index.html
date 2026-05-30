@@ -3,138 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor UVG - Modelos de Desarrollo</title>
+    <title>UVG Liquid Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        uvg: {
-                            green: '#0B5135',
-                            dark: '#14253F',
-                            light: '#E8F1EC'
-                        }
-                    }
-                }
-            }
+    <style>
+        :root { --glass-bg: rgba(255, 255, 255, 0.2); }
+        body { background: radial-gradient(circle at 50% 50%, #0B5135, #0a1421); min-height: 100vh; color: white; font-family: 'Inter', sans-serif; }
+        
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
-    </script>
+        
+        .glass-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; transition: 0.3s; }
+        .glass-input:focus { background: rgba(255,255,255,0.1); outline: none; border-color: #4ade80; }
+        
+        /* Smooth transitions */
+        .preview-slide { transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="p-4 md:p-8">
 
-    <div id="app" class="p-4 md:p-8">
-        <!-- Login Section -->
-        <div id="login-section" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-            <h2 class="text-2xl font-bold text-uvg-green mb-6 text-center">Acceso al Editor UVG</h2>
-            
-            <form id="login-form" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Usuario o Correo</label>
-                    <input type="text" id="login-email" value="mar251808@uvg.edu.gt" class="w-full px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-uvg-green outline-none" required>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                    <input type="password" id="login-password" value="UVG2026" class="w-full px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-uvg-green outline-none" required>
-                </div>
-                <button type="submit" id="login-btn" class="w-full bg-uvg-green text-white py-3 rounded-xl font-bold hover:bg-green-900 transition-colors">
-                    Iniciar Sesión
-                </button>
-                <button type="button" onclick="resetPassword()" class="w-full text-sm text-uvg-green hover:underline">¿Olvidaste tu contraseña?</button>
-            </form>
-
-            <div class="my-6 flex items-center gap-3">
-                <div class="flex-grow h-px bg-gray-300"></div>
-                <span class="text-gray-500 text-sm">o conectar con</span>
-                <div class="flex-grow h-px bg-gray-300"></div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-3">
-                <button onclick="loginWithGoogle()" class="py-3 border rounded-xl hover:bg-gray-50"><i class="fa-brands fa-google text-red-500"></i></button>
-                <button onclick="loginWithMicrosoft()" class="py-3 border rounded-xl hover:bg-gray-50"><i class="fa-brands fa-microsoft text-blue-600"></i></button>
-                <button onclick="loginWithFacebook()" class="py-3 border rounded-xl hover:bg-gray-50"><i class="fa-brands fa-facebook text-blue-700"></i></button>
-            </div>
-            <p id="login-status" class="mt-4 text-center text-sm font-medium h-5"></p>
+    <div id="login-section" class="max-w-md mx-auto glass-panel p-10 mt-20">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold mb-2">Liquid Studio</h2>
+            <p class="text-white/60">Bienvenido a UVG Creative Lab</p>
         </div>
+        <form id="login-form" class="space-y-4">
+            <input type="text" id="login-email" placeholder="Usuario o Correo" class="w-full px-4 py-3 glass-input text-white">
+            <input type="password" id="login-password" placeholder="Contraseña" class="w-full px-4 py-3 glass-input text-white">
+            <button class="w-full bg-white/20 hover:bg-white/30 py-3 rounded-xl font-semibold transition-all">Iniciar Sesión</button>
+        </form>
+        <div class="my-6 grid grid-cols-4 gap-2">
+            <button onclick="loginProvider('google')" class="p-3 bg-white/10 rounded-xl hover:bg-white/20"><i class="fa-brands fa-google"></i></button>
+            <button onclick="loginProvider('microsoft')" class="p-3 bg-white/10 rounded-xl hover:bg-white/20"><i class="fa-brands fa-microsoft"></i></button>
+            <button onclick="loginProvider('facebook')" class="p-3 bg-white/10 rounded-xl hover:bg-white/20"><i class="fa-brands fa-facebook"></i></button>
+            <button onclick="loginProvider('anonymous')" class="p-3 bg-white/10 rounded-xl hover:bg-white/20"><i class="fa-solid fa-user-secret"></i></button>
+        </div>
+    </div>
 
-        <!-- Dashboard Section -->
-        <div id="dashboard-section" class="hidden max-w-4xl mx-auto">
-            <header class="flex justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <h1 class="text-2xl font-bold text-uvg-dark">Editor de Diapositivas</h1>
-                <div class="flex gap-3">
-                    <a href="dashboard.html" target="_blank" class="bg-uvg-green text-white px-5 py-2 rounded-xl font-semibold hover:bg-green-900">Proyectar Presentación</a>
-                    <button onclick="logout()" class="text-red-500 font-semibold px-5 py-2">Salir</button>
+    <div id="dashboard-section" class="hidden max-w-7xl mx-auto">
+        <header class="flex justify-between items-center glass-panel p-6 mb-8">
+            <h1 class="text-2xl font-bold">Liquid <span class="text-green-400">Editor</span></h1>
+            <div class="flex gap-4">
+                <button onclick="window.open('dashboard.html', '_blank')" class="bg-green-600 px-6 py-2 rounded-full hover:bg-green-500 transition-all">Presentar</button>
+                <button onclick="logout()" class="text-red-400">Salir</button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Sidebar Editor (Canva Style) -->
+            <div class="glass-panel p-6 space-y-4">
+                <h3 class="font-semibold text-lg mb-4">Editor de Diapositiva</h3>
+                <input type="text" id="slide-title" placeholder="Título" class="w-full p-3 glass-input">
+                <textarea id="slide-concept" placeholder="Concepto Clave" class="w-full p-3 glass-input h-24"></textarea>
+                <input type="text" id="slide-image" placeholder="URL de Imagen (Opcional)" class="w-full p-3 glass-input">
+                <button onclick="saveSlide()" class="w-full bg-green-500 py-3 rounded-xl font-bold">Guardar Cambios</button>
+            </div>
+
+            <!-- Preview (Canva-like Stage) -->
+            <div class="lg:col-span-2 glass-panel p-8 flex flex-col items-center justify-center">
+                <div id="canvas-preview" class="w-full aspect-video bg-white/10 rounded-xl border border-white/20 flex items-center justify-center p-10 text-center">
+                    <div>
+                        <h2 id="prev-title" class="text-4xl font-bold mb-4">Vista Previa</h2>
+                        <p id="prev-concept" class="text-lg opacity-80">Edita desde el panel lateral...</p>
+                    </div>
                 </div>
-            </header>
-            
-            <div id="slides-editor" class="space-y-6">
-                <!-- Diapositivas se cargan aquí -->
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, OAuthProvider, FacebookAuthProvider, onAuthStateChanged, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, OAuthProvider, FacebookAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyACfn6C6_XqLDQI29f6uHUUwlCQkSCXNYk",
-            authDomain: "costos-comunicacion-digital.firebaseapp.com",
-            databaseURL: "https://costos-comunicacion-digital-default-rtdb.firebaseio.com",
-            projectId: "costos-comunicacion-digital",
-            storageBucket: "costos-comunicacion-digital.firebasestorage.app",
-            messagingSenderId: "299496606379",
-            appId: "1:299496606379:web:a4d6609ff79eebff0c85ee",
-            measurementId: "G-D7GGDWSWKY"
-        };
-
+        const firebaseConfig = { apiKey: "AIzaSyACfn6C6_XqLDQI29f6uHUUwlCQkSCXNYk", authDomain: "costos-comunicacion-digital.firebaseapp.com", projectId: "costos-comunicacion-digital", storageBucket: "costos-comunicacion-digital.firebasestorage.app", messagingSenderId: "299496606379", appId: "1:299496606379:web:a4d6609ff79eebff0c85ee" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        
-        // UI Logic
-        const loginSection = document.getElementById('login-section');
-        const dashboardSection = document.getElementById('dashboard-section');
-        const loginStatus = document.getElementById('login-status');
+        const db = getFirestore(app);
+
+        // UI Listeners
+        window.loginProvider = async (p) => {
+            let provider;
+            if(p === 'google') provider = new GoogleAuthProvider();
+            if(p === 'microsoft') provider = new OAuthProvider('microsoft.com');
+            if(p === 'facebook') provider = new FacebookAuthProvider();
+            
+            try { await signInWithPopup(auth, provider); } catch(e) { alert("Error: " + e.message); }
+        };
 
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                loginSection.classList.add('hidden');
-                dashboardSection.classList.remove('hidden');
+            if(user) {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('dashboard-section').classList.remove('hidden');
             } else {
-                loginSection.classList.remove('hidden');
-                dashboardSection.classList.add('hidden');
+                document.getElementById('login-section').classList.remove('hidden');
+                document.getElementById('dashboard-section').classList.add('hidden');
             }
         });
 
-        // Auth Functions
-        window.loginWithGoogle = () => signInWithPopup(auth, new GoogleAuthProvider());
-        window.loginWithMicrosoft = () => signInWithPopup(auth, new OAuthProvider('microsoft.com'));
-        window.loginWithFacebook = () => signInWithPopup(auth, new FacebookAuthProvider());
-        window.logout = () => signOut(auth);
-
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-password').value;
-            const finalEmail = email.includes('@') ? email : `${email}@uvg.edu.gt`;
-            try {
-                await signInWithEmailAndPassword(auth, finalEmail, pass);
-            } catch (err) {
-                loginStatus.innerText = "Error: " + err.message;
-            }
-        });
-
-        window.resetPassword = async () => {
-            const email = document.getElementById('login-email').value;
-            if(!email) return alert("Ingresa tu correo primero");
-            const finalEmail = email.includes('@') ? email : `${email}@uvg.edu.gt`;
-            await sendPasswordResetEmail(auth, finalEmail);
-            alert("Enlace de recuperación enviado a " + finalEmail);
+        window.saveSlide = async () => {
+            const title = document.getElementById('slide-title').value;
+            const concept = document.getElementById('slide-concept').value;
+            await addDoc(collection(db, 'artifacts/costos-comunicacion/public/data/slides'), {
+                title, concept, createdAt: Date.now()
+            });
+            alert("¡Guardado en el Cloud!");
         };
+        
+        // Live preview sync
+        document.getElementById('slide-title').oninput = (e) => document.getElementById('prev-title').innerText = e.target.value;
+        document.getElementById('slide-concept').oninput = (e) => document.getElementById('prev-concept').innerText = e.target.value;
     </script>
 </body>
 </html>
