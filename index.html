@@ -163,6 +163,14 @@
                     <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión Segura
                 </button>
             </form>
+            
+            <!-- Botón de Recuperación de Contraseña -->
+            <div class="mt-4 w-full text-center">
+                <button type="button" id="btn-reset-pwd" class="text-sm text-uvg-green font-semibold hover:underline transition-all">
+                    ¿Olvidaste tu contraseña?
+                </button>
+            </div>
+
             <p id="login-status" class="text-sm font-medium mt-4 h-5"></p>
         </div>
     </div>
@@ -323,7 +331,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Configuración y variables globales
@@ -374,6 +382,32 @@
         const loginForm = document.getElementById('login-form');
         const loginBtn = document.getElementById('btn-login');
         const loginStatus = document.getElementById('login-status');
+        const resetPwdBtn = document.getElementById('btn-reset-pwd');
+
+        // Lógica para enviar correo de recuperación
+        resetPwdBtn.addEventListener('click', async () => {
+            const emailInput = document.getElementById('login-email').value.trim();
+            if (!emailInput) {
+                window.showAlert("Falta información", "Por favor, ingresa tu usuario o correo en el primer campo para poder enviarte el enlace de recuperación.", true);
+                return;
+            }
+
+            const finalEmail = emailInput.includes('@') ? emailInput : `${emailInput}@uvg.edu.gt`;
+            
+            try {
+                loginStatus.innerText = 'Enviando correo...';
+                loginStatus.className = 'text-sm font-medium mt-4 h-5 text-gray-500';
+                
+                await sendPasswordResetEmail(auth, finalEmail);
+                
+                window.showAlert("¡Correo Enviado!", `Hemos enviado un enlace para restablecer tu contraseña a:\n\n${finalEmail}\n\nRevisa tu bandeja de entrada y la carpeta de Spam.`);
+                loginStatus.innerText = '';
+            } catch (error) {
+                console.error("Error enviando correo de recuperación:", error);
+                window.showAlert("Error", "No se pudo enviar el correo. Verifica que el usuario exista en la base de datos.", true);
+                loginStatus.innerText = '';
+            }
+        });
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
