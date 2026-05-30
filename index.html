@@ -318,15 +318,20 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Configuración y variables globales del entorno Artifact
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'local-test-app';
-        let firebaseConfig = {};
+        // Configuración y variables globales
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'costos-comunicacion';
         
-        try {
-            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-                // Mock config for offline testing if needed, though strictly artifact env is expected
-            };
-        } catch(e) { console.error("Error parsing firebase config", e); }
+        // Tu configuración real de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyACfn6C6_XqLDQI29f6uHUUwlCQkSCXNYk",
+            authDomain: "costos-comunicacion-digital.firebaseapp.com",
+            databaseURL: "https://costos-comunicacion-digital-default-rtdb.firebaseio.com",
+            projectId: "costos-comunicacion-digital",
+            storageBucket: "costos-comunicacion-digital.firebasestorage.app",
+            messagingSenderId: "299496606379",
+            appId: "1:299496606379:web:a4d6609ff79eebff0c85ee",
+            measurementId: "G-D7GGDWSWKY"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
